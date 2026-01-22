@@ -1,6 +1,6 @@
 {
   "$schema": "vscode://schemas/color-theme",
-  "name": "Ephemeral Pure",
+  "name": "Ephemeral",
   "type": "dark",
   "colors": {
     "editor.background": "#0d0d1a",
