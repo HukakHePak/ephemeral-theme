@@ -519,8 +519,38 @@ async function applyBackground(isFirstActivation = false, force = false) {
     }
 }
 
+// Check if this is first installation and set defaults
+async function checkFirstInstall() {
+    const config = vscode.workspace.getConfiguration('ephemeral-theme');
+    const globalConfig = vscode.workspace.getConfiguration();
+    
+    // Check if theme was already set by user
+    const currentTheme = globalConfig.get('workbench.colorTheme');
+    const isFirstInstall = currentTheme !== 'Ephemeral';
+    
+    // Set theme automatically if not already set
+    if (isFirstInstall) {
+        try {
+            await globalConfig.update('workbench.colorTheme', 'Ephemeral', vscode.ConfigurationTarget.Global);
+            console.log('Ephemeral Theme: Theme set automatically');
+        } catch (error) {
+            console.error('Ephemeral Theme: Failed to set theme', error);
+        }
+    }
+    
+    // Check if our config values are at defaults (first install)
+    // enabled defaults to true, opacity defaults to 0.05 in package.json
+    // If user hasn't changed them, they will be at defaults
+    // We don't need to explicitly set them as they're already defaults
+    
+    return isFirstInstall;
+}
+
 function activate(context) {
     console.log('Ephemeral Theme background extension is now active');
+    
+    // Check if first install and set theme
+    checkFirstInstall();
     
     // Check if patch is needed on activation
     // Only apply if not already patched or if config changed
