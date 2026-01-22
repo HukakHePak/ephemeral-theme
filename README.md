@@ -34,13 +34,17 @@ A beautiful, ephemeral dark theme for Cursor and Visual Studio Code.
 
 ## Color Palette
 
-- **Background**: `#1a1a2e` - Deep dark blue
-- **Foreground**: `#e4e4e7` - Soft white
-- **Accent**: `#00d9ff` - Bright cyan
-- **Strings**: `#51cf66` - Green
-- **Keywords**: `#da77f2` - Purple
-- **Functions**: `#00d9ff` - Cyan
-- **Numbers**: `#ffd93d` - Yellow
+Inspired by cyberpunk neon aesthetics:
+
+- **Background**: `#0d0d1a` - Deep dark purple-blue
+- **Foreground**: `#e0e0ff` - Soft bluish white
+- **Primary Accent**: `#00ffff` - Bright neon cyan (like the EPHEMERAL sign)
+- **Secondary Accent**: `#ff00ff` - Neon magenta/pink
+- **Strings**: `#00ff88` - Neon green
+- **Keywords**: `#ff00ff` - Neon magenta
+- **Functions**: `#00ffff` - Bright cyan
+- **Numbers**: `#ffd700` - Gold/yellow
+- **Comments**: `#6b4a9d` - Muted purple
 
 ## Development
 

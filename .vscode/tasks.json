@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "defaultBuildTask",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "No build required for theme extension"
+      ],
+      "problemMatcher": [],
+      "isBackground": false
+    }
+  ]
+}
