@@ -538,10 +538,37 @@ async function checkFirstInstall() {
         }
     }
     
-    // Check if our config values are at defaults (first install)
-    // enabled defaults to true, opacity defaults to 0.05 in package.json
-    // If user hasn't changed them, they will be at defaults
-    // We don't need to explicitly set them as they're already defaults
+    // Check if config values are explicitly set (not just defaults)
+    // Only set defaults on first install, never override user settings
+    const enabledInspect = config.inspect('enabled');
+    const opacityInspect = config.inspect('opacity');
+    
+    // Only set defaults if this is first install AND values are not explicitly set
+    if (isFirstInstall) {
+        // Set enabled if not explicitly set anywhere
+        if (enabledInspect.globalValue === undefined && 
+            enabledInspect.workspaceValue === undefined && 
+            enabledInspect.workspaceFolderValue === undefined) {
+            try {
+                await config.update('enabled', true, vscode.ConfigurationTarget.Global);
+                console.log('Ephemeral Theme: Set enabled=true in settings (first install)');
+            } catch (error) {
+                console.error('Ephemeral Theme: Failed to set enabled', error);
+            }
+        }
+        
+        // Set opacity if not explicitly set anywhere
+        if (opacityInspect.globalValue === undefined && 
+            opacityInspect.workspaceValue === undefined && 
+            opacityInspect.workspaceFolderValue === undefined) {
+            try {
+                await config.update('opacity', 0.05, vscode.ConfigurationTarget.Global);
+                console.log('Ephemeral Theme: Set opacity=0.05 in settings (first install)');
+            } catch (error) {
+                console.error('Ephemeral Theme: Failed to set opacity', error);
+            }
+        }
+    }
     
     return isFirstInstall;
 }
