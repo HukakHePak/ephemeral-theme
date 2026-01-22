@@ -178,6 +178,12 @@ async function hasPatched() {
         }
         return false;
     } catch (error) {
+        // If we can't read file due to permissions, assume patch might be applied
+        // Don't try to restore if we can't even check status
+        if (error.code === 'EPERM' || error.code === 'EACCES') {
+            console.warn('Ephemeral Theme: Cannot check patch status due to permissions');
+            return 'unknown'; // Return special value to indicate we can't check
+        }
         console.error('Ephemeral Theme: Failed to check patch status', error);
         return false;
     }
@@ -364,8 +370,21 @@ async function applyBackground(isFirstActivation = false, force = false) {
     if (!enabled) {
         // Check if already restored (no patch)
         const patchStatus = await hasPatched();
+        
+        // If we can't check status due to permissions, don't try to restore
+        if (patchStatus === 'unknown') {
+            console.log('Ephemeral Theme: Cannot check patch status, skipping restore');
+            return;
+        }
+        
         if (!force && patchStatus === false) {
             console.log('Ephemeral Theme: Already disabled, skipping restore');
+            return;
+        }
+        
+        // Only try to restore if we know patch is applied
+        if (patchStatus !== true && patchStatus !== 'legacy') {
+            console.log('Ephemeral Theme: No patch to restore');
             return;
         }
         
@@ -421,27 +440,17 @@ async function applyBackground(isFirstActivation = false, force = false) {
     // Check if already patched
     const patchStatus = await hasPatched();
     
-    // If patch is already applied and we're not forcing, check if we need to update
-    if (!force && patchStatus === true) {
-        console.log('Ephemeral Theme: Patch already applied with current version');
-        // Patch is already applied, just show reload notification if first activation
-        if (isFirstActivation) {
-            vscode.window.showInformationMessage(
-                'Ephemeral Theme: Background is already applied. Please reload the window to see changes.',
-                { title: 'Reload Window' }
-            ).then(confirm => {
-                if (confirm) {
-                    vscode.commands.executeCommand('workbench.action.reloadWindow');
-                }
-            });
-        }
+    // If patch is already applied, never reapply - it's already working
+    // Patch reads config dynamically, so no need to update it
+    if (patchStatus === true) {
+        console.log('Ephemeral Theme: Patch already applied with current version, skipping');
         return;
     }
     
-    // If forcing (config changed) or patch not applied, apply/update patch
-    // Patch reads config dynamically, so we don't need to pass config values
+    // Only apply patch if it's not already applied
+    // This should only happen on first activation
     const patchContent = generateFullscreenPatch();
-    const result = await applyPatches(patchContent, force);
+    const result = await applyPatches(patchContent, false);
     
     // If already applied, don't show error
     if (result.alreadyApplied) {
@@ -497,8 +506,8 @@ async function applyBackground(isFirstActivation = false, force = false) {
         return;
     }
     
-    // Show reload notification after successful patch (only on first activation)
-    if (isFirstActivation) {
+    // Show reload notification after successful patch
+    if (result.success) {
         vscode.window.showInformationMessage(
             'Ephemeral Theme: Background has been applied! Please reload the window to see the changes.',
             { title: 'Reload Window' }
@@ -520,22 +529,53 @@ function activate(context) {
     // Listen for configuration changes
     const configWatcher = vscode.workspace.onDidChangeConfiguration(async (e) => {
         if (e.affectsConfiguration('ephemeral-theme')) {
-            // Patch reads config dynamically, so we just need to reload window
-            // No need to reapply patch - it will read new config on reload
+            const config = vscode.workspace.getConfiguration('ephemeral-theme');
+            const enabled = config.get('enabled', true);
             const patchStatus = await hasPatched();
-            if (patchStatus === true) {
-                // Patch is already applied, just reload
-                vscode.window.showInformationMessage(
-                    'Ephemeral Theme: Background configuration changed. Please reload window.',
-                    { title: 'Reload' }
-                ).then(confirm => {
-                    if (confirm) {
-                        vscode.commands.executeCommand('workbench.action.reloadWindow');
-                    }
-                });
+            
+            // Check if 'enabled' setting changed
+            const enabledChanged = e.affectsConfiguration('ephemeral-theme.enabled');
+            
+            if (enabledChanged && !enabled) {
+                // 'enabled' changed to false - need to remove patch
+                if (patchStatus === true || patchStatus === 'legacy') {
+                    // Patch is applied, need to remove it (requires permissions)
+                    await applyBackground(false, false);
+                }
+                // If patch not applied or unknown, nothing to do
+            } else if (enabledChanged && enabled) {
+                // 'enabled' changed to true - check if patch is applied
+                if (patchStatus !== true) {
+                    // Patch not applied, apply it (requires permissions)
+                    await applyBackground(false, false);
+                } else {
+                    // Patch already applied, just reload
+                    vscode.window.showInformationMessage(
+                        'Ephemeral Theme: Background configuration changed. Please reload window.',
+                        { title: 'Reload' }
+                    ).then(confirm => {
+                        if (confirm) {
+                            vscode.commands.executeCommand('workbench.action.reloadWindow');
+                        }
+                    });
+                }
             } else {
-                // Patch not applied, apply it
-                await applyBackground(false, false);
+                // Other settings changed (opacity, etc.) - patch reads config dynamically
+                // Just show reload notification, never reapply patch
+                if (patchStatus === true) {
+                    vscode.window.showInformationMessage(
+                        'Ephemeral Theme: Background configuration changed. Please reload window.',
+                        { title: 'Reload' }
+                    ).then(confirm => {
+                        if (confirm) {
+                            vscode.commands.executeCommand('workbench.action.reloadWindow');
+                        }
+                    });
+                } else if (patchStatus === false) {
+                    // Patch not applied, apply it (first time, requires permissions)
+                    await applyBackground(false, false);
+                }
+                // If unknown, do nothing
             }
         }
     });
