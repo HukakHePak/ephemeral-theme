@@ -440,9 +440,10 @@ async function applyBackground(isFirstActivation = false, force = false) {
     // Check if already patched
     const patchStatus = await hasPatched();
     
-    // If patch is already applied, never reapply - it's already working
+    // If patch is already applied and not forcing, skip reapplication
     // Patch reads config dynamically, so no need to update it
-    if (patchStatus === true) {
+    // But allow force to reapply if needed (e.g., when switching theme)
+    if (patchStatus === true && !force) {
         console.log('Ephemeral Theme: Patch already applied with current version, skipping');
         return;
     }
@@ -522,66 +523,130 @@ async function applyBackground(isFirstActivation = false, force = false) {
 // Check if this is first installation and set defaults
 async function checkFirstInstall() {
     const config = vscode.workspace.getConfiguration('ephemeral-theme');
-    const globalConfig = vscode.workspace.getConfiguration();
-    
-    // Check if theme was already set by user
-    const currentTheme = globalConfig.get('workbench.colorTheme');
-    const isFirstInstall = currentTheme !== 'Ephemeral';
-    
-    // Set theme automatically if not already set
-    if (isFirstInstall) {
-        try {
-            await globalConfig.update('workbench.colorTheme', 'Ephemeral', vscode.ConfigurationTarget.Global);
-            console.log('Ephemeral Theme: Theme set automatically');
-        } catch (error) {
-            console.error('Ephemeral Theme: Failed to set theme', error);
-        }
-    }
     
     // Check if config values are explicitly set (not just defaults)
-    // Only set defaults on first install, never override user settings
-    const enabledInspect = config.inspect('enabled');
+    // Only set opacity default on first install, never override user settings
     const opacityInspect = config.inspect('opacity');
     
-    // Only set defaults if this is first install AND values are not explicitly set
-    if (isFirstInstall) {
-        // Set enabled if not explicitly set anywhere
-        if (enabledInspect.globalValue === undefined && 
-            enabledInspect.workspaceValue === undefined && 
-            enabledInspect.workspaceFolderValue === undefined) {
-            try {
-                await config.update('enabled', true, vscode.ConfigurationTarget.Global);
-                console.log('Ephemeral Theme: Set enabled=true in settings (first install)');
-            } catch (error) {
-                console.error('Ephemeral Theme: Failed to set enabled', error);
-            }
-        }
-        
-        // Set opacity if not explicitly set anywhere
-        if (opacityInspect.globalValue === undefined && 
-            opacityInspect.workspaceValue === undefined && 
-            opacityInspect.workspaceFolderValue === undefined) {
-            try {
-                await config.update('opacity', 0.05, vscode.ConfigurationTarget.Global);
-                console.log('Ephemeral Theme: Set opacity=0.05 in settings (first install)');
-            } catch (error) {
-                console.error('Ephemeral Theme: Failed to set opacity', error);
-            }
+    // Set opacity if not explicitly set anywhere
+    if (opacityInspect.globalValue === undefined && 
+        opacityInspect.workspaceValue === undefined && 
+        opacityInspect.workspaceFolderValue === undefined) {
+        try {
+            await config.update('opacity', 0.05, vscode.ConfigurationTarget.Global);
+            console.log('Ephemeral Theme: Set opacity=0.05 in settings (first install)');
+        } catch (error) {
+            console.error('Ephemeral Theme: Failed to set opacity', error);
         }
     }
-    
-    return isFirstInstall;
 }
 
 function activate(context) {
     console.log('Ephemeral Theme background extension is now active');
     
-    // Check if first install and set theme
+    // Check if first install and set default opacity
     checkFirstInstall();
     
-    // Check if patch is needed on activation
-    // Only apply if not already patched or if config changed
-    applyBackground(true, false);
+    // Track previous theme to detect when user switches to Ephemeral
+    const globalConfig = vscode.workspace.getConfiguration();
+    let previousTheme = globalConfig.get('workbench.colorTheme');
+    
+    // Listen for theme changes - set enabled=true only when user switches TO Ephemeral
+    const themeWatcher = vscode.workspace.onDidChangeConfiguration(async (e) => {
+        console.log(`Ephemeral Theme: Configuration event fired, affects workbench.colorTheme: ${e.affectsConfiguration('workbench.colorTheme')}`);
+        
+        if (e.affectsConfiguration('workbench.colorTheme')) {
+            // Re-read config to get latest value
+            const currentConfig = vscode.workspace.getConfiguration();
+            const currentTheme = currentConfig.get('workbench.colorTheme');
+            console.log(`Ephemeral Theme: Theme changed from "${previousTheme}" to "${currentTheme}"`);
+            
+            const config = vscode.workspace.getConfiguration('ephemeral-theme');
+            
+            // Check if theme name matches (could be "Ephemeral" or full extension ID)
+            const isEphemeralTheme = currentTheme === 'Ephemeral' || 
+                                     currentTheme === 'ephemeral-theme.ephemeral-theme' ||
+                                     currentTheme?.includes('Ephemeral');
+            
+            // Only set enabled=true if user switched TO Ephemeral (was not Ephemeral before)
+            const wasEphemeralBefore = previousTheme === 'Ephemeral' || 
+                                      previousTheme === 'ephemeral-theme.ephemeral-theme' ||
+                                      previousTheme?.includes('Ephemeral');
+            
+            if (isEphemeralTheme && !wasEphemeralBefore) {
+                console.log(`Ephemeral Theme: User switched TO Ephemeral theme`);
+                try {
+                    const enabledInspect = config.inspect('enabled');
+                    const currentGlobalValue = enabledInspect.globalValue;
+                    console.log(`Ephemeral Theme: Current enabled in user settings: ${currentGlobalValue === undefined ? 'not set' : currentGlobalValue}`);
+                    
+                    // Only set enabled to true if it's not explicitly set in user settings
+                    // If it's explicitly set to false, don't change it
+                    // If it's not set (undefined), create it with value true
+                    if (currentGlobalValue === undefined) {
+                        console.log(`Ephemeral Theme: enabled not set in user settings, creating enabled=true`);
+                        
+                        // Update the setting
+                        await config.update('enabled', true, vscode.ConfigurationTarget.Global);
+                        
+                        // Wait a bit for VS Code to save the setting
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        
+                        // Re-read config to verify it was saved
+                        const verifyConfig = vscode.workspace.getConfiguration('ephemeral-theme');
+                        const verifyInspect = verifyConfig.inspect('enabled');
+                        console.log(`Ephemeral Theme: Set enabled=true in user settings. Verified: ${verifyInspect.globalValue}`);
+                        
+                        if (verifyInspect.globalValue !== true) {
+                            console.error(`Ephemeral Theme: WARNING - enabled was not saved correctly! Expected true, got ${verifyInspect.globalValue}`);
+                        }
+                    } else if (currentGlobalValue === false) {
+                        console.log(`Ephemeral Theme: enabled is explicitly set to false in user settings, not changing it`);
+                    } else {
+                        console.log(`Ephemeral Theme: enabled is already set to ${currentGlobalValue} in user settings`);
+                    }
+                    
+                    // Always apply patch when switching to Ephemeral theme (if enabled is true or not set)
+                    // Use force=true to ensure patch is applied even if it was already applied
+                    // Re-read config after potential update
+                    const finalConfig = vscode.workspace.getConfiguration('ephemeral-theme');
+                    const enabled = finalConfig.get('enabled', true);
+                    console.log(`Ephemeral Theme: enabled value for patch: ${enabled}`);
+                    if (enabled) {
+                        await applyBackground(false, true);
+                    }
+                } catch (error) {
+                    console.error('Ephemeral Theme: Failed to set enabled', error);
+                    vscode.window.showErrorMessage(`Ephemeral Theme: Failed to set enabled: ${error.message}`);
+                }
+            }
+            
+            previousTheme = currentTheme;
+        }
+    });
+    
+    disposables.push(themeWatcher);
+    
+    // Don't apply patch automatically on activation
+    // Patch will be applied when user enables it or switches to Ephemeral theme
+    // Check if patch needs to be removed if enabled is explicitly false
+    const config = vscode.workspace.getConfiguration('ephemeral-theme');
+    const enabledInspect = config.inspect('enabled');
+    const enabled = config.get('enabled');
+    
+    // Only act if enabled is explicitly set (not undefined/default)
+    if (enabledInspect.globalValue !== undefined || 
+        enabledInspect.workspaceValue !== undefined || 
+        enabledInspect.workspaceFolderValue !== undefined) {
+        // enabled is explicitly set
+        if (enabled === false) {
+            // If explicitly disabled, check if patch needs to be removed
+            applyBackground(false, false);
+        }
+        // If enabled is true, patch should already be applied (or will be applied when needed)
+        // Don't apply automatically on activation
+    }
+    // If enabled is not set (undefined), do nothing - patch will be applied when theme is switched
     
     // Listen for configuration changes
     const configWatcher = vscode.workspace.onDidChangeConfiguration(async (e) => {
