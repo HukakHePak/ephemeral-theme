@@ -155,10 +155,10 @@ async function restore() {
 
 // Apply background
 async function applyBackground() {
-    const config = vscode.workspace.getConfiguration('ephemeral-theme.background');
+    const config = vscode.workspace.getConfiguration('ephemeral-theme');
     const enabled = config.get('enabled', true);
-    const opacity = config.get('opacity', 0.1);
-    const size = config.get('size', 'cover');
+    const opacity = config.get('opacity', 0.05);
+    const size = 'cover'; // Always use cover
     
     if (!enabled) {
         await restore();
@@ -177,7 +177,7 @@ function activate(context) {
     
     // Listen for configuration changes
     const configWatcher = vscode.workspace.onDidChangeConfiguration(async (e) => {
-        if (e.affectsConfiguration('ephemeral-theme.background')) {
+        if (e.affectsConfiguration('ephemeral-theme')) {
             await applyBackground();
             vscode.window.showInformationMessage(
                 'Ephemeral Theme: Background configuration changed. Please reload window.',

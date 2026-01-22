@@ -25,27 +25,17 @@
     "configuration": {
       "title": "Ephemeral Theme",
       "properties": {
-        "ephemeral-theme.background.enabled": {
+        "ephemeral-theme.enabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable background image for editor"
         },
-        "ephemeral-theme.background.opacity": {
+        "ephemeral-theme.opacity": {
           "type": "number",
-          "default": 0.1,
+          "default": 0.05,
           "minimum": 0,
           "maximum": 1,
-          "description": "Opacity of the background image (0.1 ~ 0.3 recommended)"
-        },
-        "ephemeral-theme.background.size": {
-          "type": "string",
-          "default": "cover",
-          "enum": [
-            "cover",
-            "contain",
-            "auto"
-          ],
-          "description": "Size of the background image"
+          "description": "Opacity of the background image"
         }
       }
     }
