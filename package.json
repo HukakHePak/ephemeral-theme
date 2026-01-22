@@ -52,5 +52,8 @@
     "cursor",
     "vscode"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@vscode/sudo-prompt": "^9.3.1"
+  }
 }

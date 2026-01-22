@@ -6,6 +6,5 @@ vsc-extension-quickstart.md
 **/tsconfig.json
 **/*.map
 **/*.ts
-node_modules/**
 *.vsix
 test/**
