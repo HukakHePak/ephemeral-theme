@@ -1,0 +1,194 @@
+/* CSS Example - Testing syntax highlighting */
+
+/* CSS Variables (Custom Properties) */
+:root {
+  /* Background Colors */
+  --bg-primary: #0d0d1a;
+  --bg-secondary: #0a0a15;
+  --bg-tertiary: #1a0d2e;
+  
+  /* Foreground Colors */
+  --fg-primary: #e0e0ff;
+  --fg-secondary: #9d8cc0;
+  --fg-muted: #4a3a6b;
+  
+  /* Accent Colors */
+  --neon-cyan: #00ffff;
+  --neon-magenta: #ff00ff;
+  --neon-green: #00ff88;
+  --gold: #ffd700;
+  
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  /* Typography */
+  --font-family-mono: 'Fira Code', 'Courier New', monospace;
+  --font-size-base: 14px;
+  --line-height-base: 1.6;
+}
+
+/* Element Selectors */
+body {
+  background-color: var(--bg-primary);
+  color: var(--fg-primary);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  margin: 0;
+  padding: var(--spacing-md);
+}
+
+/* Class Selectors */
+.neon-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+  background: var(--bg-secondary);
+  border: 1px solid var(--fg-muted);
+  border-radius: 8px;
+}
+
+.neon-button {
+  background: var(--neon-magenta);
+  border: 2px solid var(--neon-magenta);
+  color: var(--bg-primary);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-base);
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.neon-button:hover {
+  background: var(--neon-cyan);
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 20px var(--neon-cyan);
+  transform: translateY(-2px);
+}
+
+.neon-button:active {
+  transform: translateY(0);
+}
+
+/* ID Selectors */
+#theme-header {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 10px var(--neon-cyan);
+  margin-bottom: var(--spacing-lg);
+}
+
+#color-palette {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+/* Attribute Selectors */
+[data-theme="ephemeral"] {
+  --accent-color: var(--neon-cyan);
+}
+
+[data-color] {
+  padding: var(--spacing-md);
+  border: 1px solid var(--fg-muted);
+  border-radius: 4px;
+}
+
+/* Pseudo-classes */
+a:link {
+  color: var(--neon-cyan);
+  text-decoration: none;
+}
+
+a:visited {
+  color: var(--neon-magenta);
+}
+
+a:hover {
+  color: var(--neon-green);
+  text-shadow: 0 0 5px var(--neon-green);
+}
+
+a:active {
+  color: var(--gold);
+}
+
+/* Pseudo-elements */
+::selection {
+  background: var(--neon-magenta);
+  color: var(--bg-primary);
+}
+
+::-moz-selection {
+  background: var(--neon-magenta);
+  color: var(--bg-primary);
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+  .neon-container {
+    padding: var(--spacing-md);
+  }
+  
+  #color-palette {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #0d0d1a;
+    --fg-primary: #e0e0ff;
+  }
+}
+
+/* Animations */
+@keyframes neon-glow {
+  0%, 100% {
+    text-shadow: 0 0 10px var(--neon-cyan);
+  }
+  50% {
+    text-shadow: 0 0 20px var(--neon-cyan), 0 0 30px var(--neon-cyan);
+  }
+}
+
+.neon-text {
+  animation: neon-glow 2s ease-in-out infinite;
+}
+
+/* Flexbox */
+.flex-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+/* Grid */
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto;
+  gap: var(--spacing-md);
+}
+
+/* Transitions */
+.smooth-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Box Shadow with Neon Effect */
+.neon-shadow {
+  box-shadow: 
+    0 0 5px var(--neon-cyan),
+    0 0 10px var(--neon-cyan),
+    0 0 15px var(--neon-cyan);
+}

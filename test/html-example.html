@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ephemeral Theme - Cyberpunk Style</title>
+    <style>
+        /* CSS Example */
+        :root {
+            --neon-cyan: #00ffff;
+            --neon-magenta: #ff00ff;
+            --dark-purple: #0d0d1a;
+            --neon-green: #00ff88;
+            --gold: #ffd700;
+        }
+
+        body {
+            background-color: var(--dark-purple);
+            color: var(--neon-cyan);
+            font-family: 'Courier New', monospace;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .neon-button {
+            background: var(--neon-magenta);
+            border: 2px solid var(--neon-magenta);
+            color: var(--dark-purple);
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .neon-button:hover {
+            box-shadow: 0 0 20px var(--neon-magenta);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Ephemeral Theme</h1>
+            <nav>
+                <ul>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#colors">Colors</a></li>
+                    <li><a href="#install">Install</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main>
+            <section id="about">
+                <h2>Cyberpunk-Inspired Theme</h2>
+                <p>
+                    A beautiful dark theme with neon accents inspired by 
+                    cyberpunk aesthetics. Perfect for long coding sessions.
+                </p>
+            </section>
+
+            <section id="colors">
+                <h2>Color Palette</h2>
+                <div class="color-grid">
+                    <div class="color-item" data-color="#00ffff">
+                        <span class="color-name">Neon Cyan</span>
+                        <span class="color-hex">#00ffff</span>
+                    </div>
+                    <div class="color-item" data-color="#ff00ff">
+                        <span class="color-name">Neon Magenta</span>
+                        <span class="color-hex">#ff00ff</span>
+                    </div>
+                    <div class="color-item" data-color="#00ff88">
+                        <span class="color-name">Neon Green</span>
+                        <span class="color-hex">#00ff88</span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="install">
+                <h2>Installation</h2>
+                <button class="neon-button" onclick="installTheme()">
+                    Install Theme
+                </button>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Inline JavaScript
+        function installTheme() {
+            console.log('Installing Ephemeral theme...');
+            // Installation logic here
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Theme page loaded');
+        });
+
+        // Arrow functions
+        const getColorValue = (element) => {
+            return element.getAttribute('data-color');
+        };
+
+        // Template literals
+        const themeInfo = `
+            Name: Ephemeral Theme
+            Version: 0.0.1
+            Type: Dark Theme
+        `;
+    </script>
+</body>
+</html>
