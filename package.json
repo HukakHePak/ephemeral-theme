@@ -16,6 +16,11 @@
         "label": "Ephemeral",
         "uiTheme": "vs-dark",
         "path": "./themes/ephemeral-color-theme.json"
+      },
+      {
+        "label": "Ephemeral Pure",
+        "uiTheme": "vs-dark",
+        "path": "./themes/ephemeral-pure-theme.json"
       }
     ]
   },
