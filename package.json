@@ -10,6 +10,10 @@
     "Themes"
   ],
   "icon": "resources/icon.png",
+  "main": "./src/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "themes": [
       {
@@ -17,7 +21,24 @@
         "uiTheme": "vs-dark",
         "path": "./themes/ephemeral-color-theme.json"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Ephemeral Theme",
+      "properties": {
+        "ephemeral-theme.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable background image for editor"
+        },
+        "ephemeral-theme.opacity": {
+          "type": "number",
+          "default": 0.05,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Opacity of the background image"
+        }
+      }
+    }
   },
   "publisher": "ephemeral-theme",
   "repository": {
@@ -31,5 +52,8 @@
     "cursor",
     "vscode"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@vscode/sudo-prompt": "^9.3.1"
+  }
 }
