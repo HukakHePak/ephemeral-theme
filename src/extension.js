@@ -105,6 +105,31 @@ function cleanPatches(content) {
     return content.replace(regex, '');
 }
 
+// Check if patch is already applied
+async function hasPatched() {
+    const jsPath = getJsPath();
+    
+    if (!fs.existsSync(jsPath)) {
+        return false;
+    }
+    
+    try {
+        const content = await fs.promises.readFile(jsPath, ENCODING);
+        // Check if current version patch exists
+        if (content.includes(`${BACKGROUND_VER}.${VERSION}`)) {
+            return true;
+        }
+        // Check if any old version patch exists
+        if (content.includes(BACKGROUND_VER)) {
+            return 'legacy';
+        }
+        return false;
+    } catch (error) {
+        console.error('Ephemeral Theme: Failed to check patch status', error);
+        return false;
+    }
+}
+
 // Apply patches to workbench.js with sudo/admin rights
 async function applyPatchesWithSudo(patchContent) {
     const jsPath = getJsPath();
@@ -161,7 +186,7 @@ async function applyPatchesWithSudo(patchContent) {
 }
 
 // Apply patches to workbench.js
-async function applyPatches(patchContent) {
+async function applyPatches(patchContent, force = false) {
     const jsPath = getJsPath();
     
     if (!fs.existsSync(jsPath)) {
@@ -171,6 +196,13 @@ async function applyPatches(patchContent) {
     
     try {
         let content = await fs.promises.readFile(jsPath, ENCODING);
+        
+        // Check if already patched with current version
+        if (!force && content.includes(`${BACKGROUND_VER}.${VERSION}`)) {
+            console.log('Ephemeral Theme: Patch already applied, skipping');
+            return { success: true, alreadyApplied: true };
+        }
+        
         content = cleanPatches(content);
         
         if (patchContent) {
@@ -195,39 +227,158 @@ async function applyPatches(patchContent) {
     }
 }
 
+// Restore workbench.js (remove patches) with sudo/admin rights
+async function restoreWithSudo() {
+    const jsPath = getJsPath();
+    const { tmpdir } = require('os');
+    const crypto = require('crypto');
+    
+    // Try to load sudo-prompt dynamically
+    let sudo;
+    try {
+        sudo = require('@vscode/sudo-prompt');
+    } catch (error) {
+        return { success: false, error: 'SUDO_NOT_AVAILABLE', message: 'sudo-prompt module not available' };
+    }
+    
+    try {
+        // Read current content
+        let content = await fs.promises.readFile(jsPath, ENCODING);
+        content = cleanPatches(content);
+        
+        // Write to temp file first
+        const randomId = crypto.randomBytes(16).toString('hex');
+        const tempFilePath = path.join(tmpdir(), `ephemeral-theme-restore-${randomId}.tmp`);
+        await fs.promises.writeFile(tempFilePath, content, ENCODING);
+        
+        // Copy temp file to target with sudo
+        return new Promise((resolve, reject) => {
+            const isWindows = process.platform === 'win32';
+            const cmd = isWindows 
+                ? `powershell -Command "Copy-Item -Path '${tempFilePath.replace(/\\/g, '/')}' -Destination '${jsPath.replace(/\\/g, '/')}' -Force"`
+                : `cp -f "${tempFilePath}" "${jsPath}"`;
+            
+            sudo.exec(cmd, { name: 'Ephemeral Theme' }, (error, stdout, stderr) => {
+                // Clean up temp file
+                fs.promises.unlink(tempFilePath).catch(() => {});
+                
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve({ success: true });
+                }
+            });
+        });
+    } catch (error) {
+        return { success: false, error: error.code || 'UNKNOWN', message: error.message };
+    }
+}
+
 // Restore workbench.js (remove patches)
 async function restore() {
     const jsPath = getJsPath();
     
     if (!fs.existsSync(jsPath)) {
-        return false;
+        return { success: false, error: 'File not found' };
     }
     
     try {
         let content = await fs.promises.readFile(jsPath, ENCODING);
         content = cleanPatches(content);
         await fs.promises.writeFile(jsPath, content, ENCODING);
-        return true;
+        return { success: true };
     } catch (error) {
         console.error('Ephemeral Theme: Failed to restore workbench.js', error);
-        return false;
+        
+        // Check if it's a permission error
+        if (error.code === 'EPERM' || error.code === 'EACCES') {
+            return { success: false, error: 'PERMISSION_DENIED', message: error.message };
+        }
+        
+        return { success: false, error: error.code || 'UNKNOWN', message: error.message };
     }
 }
 
 // Apply background
-async function applyBackground(isFirstActivation = false) {
+async function applyBackground(isFirstActivation = false, force = false) {
     const config = vscode.workspace.getConfiguration('ephemeral-theme');
     const enabled = config.get('enabled', true);
     const opacity = config.get('opacity', 0.05);
     const size = 'cover'; // Always use cover
     
+    console.log(`Ephemeral Theme: enabled=${enabled}, opacity=${opacity}, force=${force}`);
+    
     if (!enabled) {
-        await restore();
+        // Check if already restored (no patch)
+        const patchStatus = await hasPatched();
+        if (!force && patchStatus === false) {
+            console.log('Ephemeral Theme: Already disabled, skipping restore');
+            return;
+        }
+        
+        const restoreResult = await restore();
+        if (!restoreResult.success && restoreResult.error === 'PERMISSION_DENIED') {
+            // Show notification asking for permissions to restore
+            const jsPath = getJsPath();
+            vscode.window.showErrorMessage(
+                `Ephemeral Theme: Permission denied. Grant administrator rights to disable background?`,
+                'Grant Permissions',
+                'Learn More'
+            ).then(action => {
+                if (action === 'Grant Permissions') {
+                    // Try to restore with sudo/admin rights
+                    restoreWithSudo().then(sudoResult => {
+                        if (sudoResult.success) {
+                            vscode.window.showInformationMessage(
+                                'Ephemeral Theme: Background has been disabled! Please reload the window.',
+                                { title: 'Reload Window' }
+                            ).then(confirm => {
+                                if (confirm) {
+                                    vscode.commands.executeCommand('workbench.action.reloadWindow');
+                                }
+                            });
+                        } else {
+                            vscode.window.showErrorMessage(
+                                `Ephemeral Theme: Failed to disable background. Please run VS Code as Administrator.\n\nFile: ${jsPath}`,
+                                'Learn More'
+                            ).then(learnAction => {
+                                if (learnAction === 'Learn More') {
+                                    vscode.env.openExternal(vscode.Uri.parse('https://code.visualstudio.com/docs/editor/command-line#_running-with-administrator-privileges'));
+                                }
+                            });
+                        }
+                    }).catch(error => {
+                        vscode.window.showErrorMessage(
+                            `Ephemeral Theme: Failed to disable background. ${error.message || 'Unknown error'}`,
+                            'Learn More'
+                        ).then(learnAction => {
+                            if (learnAction === 'Learn More') {
+                                vscode.env.openExternal(vscode.Uri.parse('https://code.visualstudio.com/docs/editor/command-line#_running-with-administrator-privileges'));
+                            }
+                        });
+                    });
+                } else if (action === 'Learn More') {
+                    vscode.env.openExternal(vscode.Uri.parse('https://code.visualstudio.com/docs/editor/command-line#_running-with-administrator-privileges'));
+                }
+            });
+        }
+        return;
+    }
+    
+    // Check if already patched and config hasn't changed
+    const patchStatus = await hasPatched();
+    if (!force && patchStatus === true) {
+        console.log('Ephemeral Theme: Patch already applied with current version, skipping');
         return;
     }
     
     const patchContent = generateFullscreenPatch({ enabled, opacity, size });
-    const result = await applyPatches(patchContent);
+    const result = await applyPatches(patchContent, force);
+    
+    // If already applied, don't show error
+    if (result.alreadyApplied) {
+        return;
+    }
     
     if (!result.success) {
         if (result.error === 'PERMISSION_DENIED') {
@@ -294,13 +445,15 @@ async function applyBackground(isFirstActivation = false) {
 function activate(context) {
     console.log('Ephemeral Theme background extension is now active');
     
-    // Apply background on activation (first time)
-    applyBackground(true);
+    // Check if patch is needed on activation
+    // Only apply if not already patched or if config changed
+    applyBackground(true, false);
     
     // Listen for configuration changes
     const configWatcher = vscode.workspace.onDidChangeConfiguration(async (e) => {
         if (e.affectsConfiguration('ephemeral-theme')) {
-            await applyBackground(false);
+            // Force apply when config changes
+            await applyBackground(false, true);
             vscode.window.showInformationMessage(
                 'Ephemeral Theme: Background configuration changed. Please reload window.',
                 { title: 'Reload' }
