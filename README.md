@@ -53,8 +53,6 @@ Bright neon colors with high contrast, inspired by cyberpunk aesthetics:
 
 The theme includes an optional animated background image. You can control it through VS Code/Cursor settings:
 
-**Note:** Background image functionality is adapted from [shalldie/vscode-background](https://github.com/shalldie/vscode-background) extension. Background images and GIFs are sourced from the video linked in the Inspiration section above.
-
 ### Configuration Options
 
 1. **Enable/Disable Background**
@@ -84,6 +82,8 @@ The theme includes an optional animated background image. You can control it thr
 4. Save the file and reload the window to apply changes
 
 **Note:** The background is automatically enabled when you switch to an Ephemeral theme. You can disable it anytime through settings.
+
+**Note:** Background image functionality is adapted from [shalldie/vscode-background](https://github.com/shalldie/vscode-background) extension. Background images and GIFs are sourced from the video linked in the Inspiration section above.
 
 ## License
 

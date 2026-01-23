@@ -211,8 +211,17 @@ async function applyPatchesWithSudo(patchContent) {
         content = cleanPatches(content);
         
         if (patchContent) {
+            // Ensure content ends properly before adding patch
+            // For minified files, ensure we end with semicolon or newline
+            const trimmed = content.trimEnd();
+            if (!trimmed.endsWith(';') && !trimmed.endsWith('}')) {
+                content = trimmed + ';';
+            }
+            if (!content.endsWith('\n')) {
+                content += '\n';
+            }
             content += [
-                `\n// ${BACKGROUND_VER}.${VERSION}`,
+                `// ${BACKGROUND_VER}.${VERSION}`,
                 patchContent,
                 `// ${BACKGROUND_VER}-end`
             ].join('\n');
@@ -267,8 +276,17 @@ async function applyPatches(patchContent, force = false) {
         content = cleanPatches(content);
         
         if (patchContent) {
+            // Ensure content ends properly before adding patch
+            // For minified files, ensure we end with semicolon or newline
+            const trimmed = content.trimEnd();
+            if (!trimmed.endsWith(';') && !trimmed.endsWith('}')) {
+                content = trimmed + ';';
+            }
+            if (!content.endsWith('\n')) {
+                content += '\n';
+            }
             content += [
-                `\n// ${BACKGROUND_VER}.${VERSION}`,
+                `// ${BACKGROUND_VER}.${VERSION}`,
                 patchContent,
                 `// ${BACKGROUND_VER}-end`
             ].join('\n');
