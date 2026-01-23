@@ -46,6 +46,7 @@ function normalizeImageUrl(imageUrl) {
 }
 
 // Generate fullscreen patch
+// Background image functionality inspired by shalldie/vscode-background extension
 function generateFullscreenPatch() {
     const extensionRoot = getExtensionRoot();
     if (!extensionRoot) {

@@ -10,9 +10,11 @@ A beautiful, ephemeral dark theme for Visual Studio Code and Cursor
 - 🔧 Optimized for long coding sessions
 -  ⎛⎝ ≽ > ⩊ < ≼ ⎠⎞ Infinite animeeee
 
-## Cover
+## Inspiration
 
 [❤️ Geoxor - Ephemeral ❤️](https://youtu.be/Hbj3z8Db4Rk?si=ZxeWDGI0jvnLgzD3)
+
+This track was one of the first compositions that got me actively listening to this amazing artist, and it became the inspiration for creating this theme.
 
 ## Color Palettes
 
@@ -50,6 +52,8 @@ Bright neon colors with high contrast, inspired by cyberpunk aesthetics:
 ## Background Image Settings
 
 The theme includes an optional animated background image. You can control it through VS Code/Cursor settings:
+
+**Note:** Background image functionality is adapted from [shalldie/vscode-background](https://github.com/shalldie/vscode-background) extension. Background images and GIFs are sourced from the video linked in the Inspiration section above.
 
 ### Configuration Options
 
