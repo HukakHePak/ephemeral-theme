@@ -121,6 +121,8 @@
     "editorGroupHeader.tabsBackground": "#0a0a15",
     "editorPane.background": "#0d0d1a",
     "editorWidget.resizeBorder": "#9d8cc0",
+    "editorGroup.emptyBackground": "#0d0d1a",
+    "editorGroup.focusedEmptyBorder": "#9d8cc0",
     "peekView.border": "#9d8cc0",
     "peekViewEditor.background": "#1a0d2e",
     "peekViewResult.background": "#1a0d2e",
