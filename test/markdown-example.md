@@ -80,7 +80,7 @@ def apply_theme(theme_name: str) -> bool:
 
 To modify the theme:
 
-1. Edit `themes/ephemeral-color-theme.json`
+1. Edit `themes/ephemeral-contrast-theme.json` or `themes/ephemeral-theme.json`
 2. Press `F5` to test changes
 3. Run `vsce package` to build the extension
 

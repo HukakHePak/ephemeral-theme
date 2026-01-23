@@ -3,8 +3,8 @@ const fs = require('fs');
 const path = require('path');
 
 const EXTENSION_NAME = 'ephemeral-theme';
-const EXTENSION_ID = 'ephemeral-theme.ephemeral-theme';
-const BACKGROUND_VER = 'ephemeral-theme.ver';
+const EXTENSION_ID = `hukakhepak.${EXTENSION_NAME}`;
+const BACKGROUND_VER = `${EXTENSION_NAME}.ver`;
 const VERSION = '0.0.1';
 const ENCODING = 'utf-8';
 
@@ -46,7 +46,8 @@ function normalizeImageUrl(imageUrl) {
 }
 
 // Generate fullscreen patch
-function generateFullscreenPatch() {
+// Background image functionality inspired by shalldie/vscode-background extension
+function generateFullscreenPatch(opacity = 0.05) {
     const extensionRoot = getExtensionRoot();
     if (!extensionRoot) {
         return '';
@@ -59,30 +60,32 @@ function generateFullscreenPatch() {
         return '';
     }
     
-    const cssVariable = '--ephemeral-theme-fullscreen-img';
+    const cssVariable = `--${EXTENSION_NAME}-fullscreen-img`;
     
     // JS script that reads config from VS Code settings and applies it
     // Uses VS Code's configuration service available in workbench context
+    // Opacity is embedded in the patch (as in original shalldie/vscode-background)
     const script = `
 (function() {
     const cssVariable = '${cssVariable}';
     const image = '${normalizedImageUrl}';
+    const extensionName = '${EXTENSION_NAME}';
+    const embeddedOpacity = ${opacity};
     
     function getConfig() {
         try {
             // Access VS Code configuration through workbench API
             if (typeof require !== 'undefined') {
                 const vscode = require('vscode');
-                const config = vscode.workspace.getConfiguration('ephemeral-theme');
+                const config = vscode.workspace.getConfiguration(extensionName);
                 return {
-                    enabled: config.get('enabled', true),
-                    opacity: config.get('opacity', 0.05)
+                    enabled: config.get('enabled', true)
                 };
             }
         } catch (e) {
             console.error('Ephemeral Theme: Failed to read config', e);
         }
-        return { enabled: true, opacity: 0.05 };
+        return { enabled: true };
     }
     
     function applyBackground() {
@@ -92,7 +95,7 @@ function generateFullscreenPatch() {
             
             if (!config.enabled) {
                 // Remove background if disabled
-                const existingStyle = document.getElementById('ephemeral-theme-background-style');
+                const existingStyle = document.getElementById('${EXTENSION_NAME}-background-style');
                 if (existingStyle) {
                     existingStyle.remove();
                 }
@@ -101,14 +104,14 @@ function generateFullscreenPatch() {
             }
             
             // Remove existing style if any
-            const existingStyle = document.getElementById('ephemeral-theme-background-style');
+            const existingStyle = document.getElementById('${EXTENSION_NAME}-background-style');
             if (existingStyle) {
                 existingStyle.remove();
             }
             
-            // Create new style with current config
+            // Create new style with embedded opacity
             const style = document.createElement("style");
-            style.id = 'ephemeral-theme-background-style';
+            style.id = '${EXTENSION_NAME}-background-style';
             style.textContent = \`body::after {
     content: '';
     display: block;
@@ -119,7 +122,7 @@ function generateFullscreenPatch() {
     background-size: \${size};
     background-repeat: no-repeat;
     background-position: center;
-    opacity: \${config.opacity};
+    opacity: \${embeddedOpacity};
     transition: 1s;
     background-image: var(\${cssVariable});
 }\`;
@@ -142,7 +145,7 @@ function generateFullscreenPatch() {
     // Re-apply when settings might change (polling as fallback)
     // Main updates happen on window reload
     setInterval(function() {
-        const existingStyle = document.getElementById('ephemeral-theme-background-style');
+        const existingStyle = document.getElementById('${EXTENSION_NAME}-background-style');
         if (!existingStyle) {
             applyBackground();
         }
@@ -154,8 +157,13 @@ function generateFullscreenPatch() {
 
 // Clean patches from file
 function cleanPatches(content) {
-    const regex = new RegExp(`\\n// ${BACKGROUND_VER}\\.[\\s\\S]*?// ${BACKGROUND_VER}-end`, 'g');
-    return content.replace(regex, '');
+    // Match patch with or without leading newline (for minified files)
+    // Also handle cases where patch might be at the end of file
+    const regex = new RegExp(`(\\n|^)// ${BACKGROUND_VER}\\.[\\s\\S]*?// ${BACKGROUND_VER}-end`, 'g');
+    let cleaned = content.replace(regex, '');
+    // Clean up any double newlines that might result
+    cleaned = cleaned.replace(/\n\n\n+/g, '\n\n');
+    return cleaned;
 }
 
 // Check if patch is already applied
@@ -209,8 +217,17 @@ async function applyPatchesWithSudo(patchContent) {
         content = cleanPatches(content);
         
         if (patchContent) {
+            // Ensure content ends properly before adding patch
+            // For minified files, ensure we end with semicolon or newline
+            const trimmed = content.trimEnd();
+            if (!trimmed.endsWith(';') && !trimmed.endsWith('}')) {
+                content = trimmed + ';';
+            }
+            if (!content.endsWith('\n')) {
+                content += '\n';
+            }
             content += [
-                `\n// ${BACKGROUND_VER}.${VERSION}`,
+                `// ${BACKGROUND_VER}.${VERSION}`,
                 patchContent,
                 `// ${BACKGROUND_VER}-end`
             ].join('\n');
@@ -265,8 +282,17 @@ async function applyPatches(patchContent, force = false) {
         content = cleanPatches(content);
         
         if (patchContent) {
+            // Ensure content ends properly before adding patch
+            // For minified files, ensure we end with semicolon or newline
+            const trimmed = content.trimEnd();
+            if (!trimmed.endsWith(';') && !trimmed.endsWith('}')) {
+                content = trimmed + ';';
+            }
+            if (!content.endsWith('\n')) {
+                content += '\n';
+            }
             content += [
-                `\n// ${BACKGROUND_VER}.${VERSION}`,
+                `// ${BACKGROUND_VER}.${VERSION}`,
                 patchContent,
                 `// ${BACKGROUND_VER}-end`
             ].join('\n');
@@ -360,7 +386,7 @@ async function restore() {
 
 // Apply background
 async function applyBackground(isFirstActivation = false, force = false) {
-    const config = vscode.workspace.getConfiguration('ephemeral-theme');
+    const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
     const enabled = config.get('enabled', true);
     const opacity = config.get('opacity', 0.05);
     const size = 'cover'; // Always use cover
@@ -389,7 +415,17 @@ async function applyBackground(isFirstActivation = false, force = false) {
         }
         
         const restoreResult = await restore();
-        if (!restoreResult.success && restoreResult.error === 'PERMISSION_DENIED') {
+        if (restoreResult.success) {
+            // Successfully removed patch, show reload notification
+            vscode.window.showInformationMessage(
+                'Ephemeral Theme: Background has been disabled! Please reload the window.',
+                { title: 'Reload Window' }
+            ).then(confirm => {
+                if (confirm) {
+                    vscode.commands.executeCommand('workbench.action.reloadWindow');
+                }
+            });
+        } else if (restoreResult.error === 'PERMISSION_DENIED') {
             // Show notification asking for permissions to restore
             const jsPath = getJsPath();
             vscode.window.showErrorMessage(
@@ -450,8 +486,9 @@ async function applyBackground(isFirstActivation = false, force = false) {
     
     // Only apply patch if it's not already applied
     // This should only happen on first activation
-    const patchContent = generateFullscreenPatch();
-    const result = await applyPatches(patchContent, false);
+    // Pass opacity to embed it in the patch (as in original shalldie/vscode-background)
+    const patchContent = generateFullscreenPatch(opacity);
+    const result = await applyPatches(patchContent, force);
     
     // If already applied, don't show error
     if (result.alreadyApplied) {
@@ -507,8 +544,8 @@ async function applyBackground(isFirstActivation = false, force = false) {
         return;
     }
     
-    // Show reload notification after successful patch
-    if (result.success) {
+    // Show reload notification after successful patch (only if not force, as force is used internally)
+    if (result.success && !force) {
         vscode.window.showInformationMessage(
             'Ephemeral Theme: Background has been applied! Please reload the window to see the changes.',
             { title: 'Reload Window' }
@@ -522,7 +559,7 @@ async function applyBackground(isFirstActivation = false, force = false) {
 
 // Check if this is first installation and set defaults
 async function checkFirstInstall() {
-    const config = vscode.workspace.getConfiguration('ephemeral-theme');
+    const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
     
     // Check if config values are explicitly set (not just defaults)
     // Only set opacity default on first install, never override user settings
@@ -561,16 +598,16 @@ function activate(context) {
             const currentTheme = currentConfig.get('workbench.colorTheme');
             console.log(`Ephemeral Theme: Theme changed from "${previousTheme}" to "${currentTheme}"`);
             
-            const config = vscode.workspace.getConfiguration('ephemeral-theme');
+            const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
             
             // Check if theme name matches (could be "Ephemeral" or full extension ID)
             const isEphemeralTheme = currentTheme === 'Ephemeral' || 
-                                     currentTheme === 'ephemeral-theme.ephemeral-theme' ||
+                                     currentTheme === EXTENSION_ID ||
                                      currentTheme?.includes('Ephemeral');
             
             // Only set enabled=true if user switched TO Ephemeral (was not Ephemeral before)
             const wasEphemeralBefore = previousTheme === 'Ephemeral' || 
-                                      previousTheme === 'ephemeral-theme.ephemeral-theme' ||
+                                      previousTheme === EXTENSION_ID ||
                                       previousTheme?.includes('Ephemeral');
             
             if (isEphemeralTheme && !wasEphemeralBefore) {
@@ -593,7 +630,7 @@ function activate(context) {
                         await new Promise(resolve => setTimeout(resolve, 100));
                         
                         // Re-read config to verify it was saved
-                        const verifyConfig = vscode.workspace.getConfiguration('ephemeral-theme');
+                        const verifyConfig = vscode.workspace.getConfiguration(EXTENSION_NAME);
                         const verifyInspect = verifyConfig.inspect('enabled');
                         console.log(`Ephemeral Theme: Set enabled=true in user settings. Verified: ${verifyInspect.globalValue}`);
                         
@@ -609,7 +646,7 @@ function activate(context) {
                     // Always apply patch when switching to Ephemeral theme (if enabled is true or not set)
                     // Use force=true to ensure patch is applied even if it was already applied
                     // Re-read config after potential update
-                    const finalConfig = vscode.workspace.getConfiguration('ephemeral-theme');
+                    const finalConfig = vscode.workspace.getConfiguration(EXTENSION_NAME);
                     const enabled = finalConfig.get('enabled', true);
                     console.log(`Ephemeral Theme: enabled value for patch: ${enabled}`);
                     if (enabled) {
@@ -630,7 +667,7 @@ function activate(context) {
     // Don't apply patch automatically on activation
     // Patch will be applied when user enables it or switches to Ephemeral theme
     // Check if patch needs to be removed if enabled is explicitly false
-    const config = vscode.workspace.getConfiguration('ephemeral-theme');
+    const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
     const enabledInspect = config.inspect('enabled');
     const enabled = config.get('enabled');
     
@@ -650,13 +687,13 @@ function activate(context) {
     
     // Listen for configuration changes
     const configWatcher = vscode.workspace.onDidChangeConfiguration(async (e) => {
-        if (e.affectsConfiguration('ephemeral-theme')) {
-            const config = vscode.workspace.getConfiguration('ephemeral-theme');
+        if (e.affectsConfiguration(EXTENSION_NAME)) {
+            const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
             const enabled = config.get('enabled', true);
             const patchStatus = await hasPatched();
             
             // Check if 'enabled' setting changed
-            const enabledChanged = e.affectsConfiguration('ephemeral-theme.enabled');
+            const enabledChanged = e.affectsConfiguration(`${EXTENSION_NAME}.enabled`);
             
             if (enabledChanged && !enabled) {
                 // 'enabled' changed to false - need to remove patch
@@ -671,10 +708,12 @@ function activate(context) {
                     // Patch not applied, apply it (requires permissions)
                     await applyBackground(false, false);
                 } else {
-                    // Patch already applied, just reload
+                    // Patch already applied, reapply with new config values before reload
+                    await applyBackground(false, true);
+                    // Show reload notification (applyBackground won't show it when force=true)
                     vscode.window.showInformationMessage(
                         'Ephemeral Theme: Background configuration changed. Please reload window.',
-                        { title: 'Reload' }
+                        { title: 'Reload Window' }
                     ).then(confirm => {
                         if (confirm) {
                             vscode.commands.executeCommand('workbench.action.reloadWindow');
@@ -682,12 +721,16 @@ function activate(context) {
                     });
                 }
             } else {
-                // Other settings changed (opacity, etc.) - patch reads config dynamically
-                // Just show reload notification, never reapply patch
+                // Other settings changed (opacity, etc.) - need to reapply patch with new values
+                // As in original shalldie/vscode-background: reapply patch before reload
                 if (patchStatus === true) {
+                    // Patch is applied, reapply it with new config values before reload
+                    // Reapply patch first (with force=true to ensure new values are applied)
+                    await applyBackground(false, true);
+                    // Then show reload notification (applyBackground won't show it when force=true)
                     vscode.window.showInformationMessage(
                         'Ephemeral Theme: Background configuration changed. Please reload window.',
-                        { title: 'Reload' }
+                        { title: 'Reload Window' }
                     ).then(confirm => {
                         if (confirm) {
                             vscode.commands.executeCommand('workbench.action.reloadWindow');

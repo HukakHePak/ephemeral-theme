@@ -1,7 +1,7 @@
 {
   "name": "ephemeral-theme",
   "displayName": "Ephemeral Theme",
-  "description": "A beautiful ephemeral theme for Cursor and VSCode",
+  "description": "A beautiful, ephemeral dark theme for VSCode and Cursor",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.74.0"
@@ -19,12 +19,12 @@
       {
         "label": "Ephemeral",
         "uiTheme": "vs-dark",
-        "path": "./themes/ephemeral-pure-theme.json"
+        "path": "./themes/ephemeral-theme.json"
       },
       {
         "label": "Ephemeral Contrast",
         "uiTheme": "vs-dark",
-        "path": "./themes/ephemeral-color-theme.json"
+        "path": "./themes/ephemeral-contrast-theme.json"
       }
     ],
     "configuration": {
@@ -53,6 +53,7 @@
   "keywords": [
     "theme",
     "dark",
+    "geoxor",
     "ephemeral",
     "cursor",
     "vscode"
