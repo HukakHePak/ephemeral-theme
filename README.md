@@ -8,7 +8,7 @@ A beautiful, ephemeral dark theme for Visual Studio Code and Cursor
 - 🎨 Carefully crafted syntax highlighting
 - 💫 Smooth, modern UI elements
 - 🔧 Optimized for long coding sessions
--  ⎛⎝ ≽ > ⩊ < ≼ ⎠⎞ Infinity animeeee
+-  ⎛⎝ ≽ > ⩊ < ≼ ⎠⎞ Infinite animeeee
 
 ## Cover
 
@@ -46,6 +46,40 @@ Bright neon colors with high contrast, inspired by cyberpunk aesthetics:
 - **JSON Keys / JS/TS Keywords**: `#ff6600` - Neon orange
 - **Scrollbar**: Purple with neon purple hover
 - **Input Fields**: Purple background with neon purple border
+
+## Background Image Settings
+
+The theme includes an optional animated background image. You can control it through VS Code/Cursor settings:
+
+### Configuration Options
+
+1. **Enable/Disable Background**
+   - Setting: `ephemeral-theme.enabled`
+   - Type: `boolean`
+   - Default: `true`
+   - Description: Enable or disable the background image
+
+2. **Background Opacity**
+   - Setting: `ephemeral-theme.opacity`
+   - Type: `number`
+   - Default: `0.05`
+   - Range: `0.0` to `1.0`
+   - Description: Control the opacity of the background image (0 = transparent, 1 = fully opaque)
+
+### How to Configure
+
+1. Open Command Palette (Ctrl+Shift+P / Cmd+Shift+P)
+2. Type "Preferences: Open User Settings (JSON)"
+3. Add or modify the settings:
+   ```json
+   {
+       "ephemeral-theme.enabled": true,
+       "ephemeral-theme.opacity": 0.05
+   }
+   ```
+4. Save the file and reload the window to apply changes
+
+**Note:** The background is automatically enabled when you switch to an Ephemeral theme. You can disable it anytime through settings.
 
 ## License
 
